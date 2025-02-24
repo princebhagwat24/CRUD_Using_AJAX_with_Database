@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Management</h1>
+        
+        <!-- Form to add user -->
+        <form id="userForm">
+            <input type="text" id="name" placeholder="Name" required>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="text" id="phone" placeholder="Phone" required>
+            <button type="submit">Add User</button>
+        </form>
+
+        <!-- Table to display users -->
+        <table id="userTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Load users on page load
+            loadUsers();
+
+            // Handle form submission for adding a user
+            $('#userForm').submit(function(e) {
+                e.preventDefault();
+                var name = $('#name').val();
+                var email = $('#email').val();
+                var phone = $('#phone').val();
+
+                $.ajax({
+                    url: 'crud.php',
+                    type: 'POST',
+                    data: {
+                        action: 'create',
+                        name: name,
+                        email: email,
+                        phone: phone
+                    },
+                    success: function(response) {
+                        alert('User added successfully');
+                        loadUsers(); // Reload the user list
+                    },
+                    error: function() {
+                        alert('Error adding user');
+                    }
+                });
+            });
+
+            // Function to load users
+            function loadUsers() {
+                $.ajax({
+                    url: 'crud.php',
+                    type: 'GET',
+                    data: { action: 'read' },
+                    success: function(response) {
+                        var users = JSON.parse(response);
+                        var rows = '';
+                        users.forEach(function(user) {
+                            rows += `<tr>
+                                <td>${user.id}</td>
+                                <td>${user.name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.phone}</td>
+                                <td>
+                                    <button class="deleteBtn" data-id="${user.id}">Delete</button>
+                                    <button class="editBtn" data-id="${user.id}" data-name="${user.name}" data-email="${user.email}" data-phone="${user.phone}">Edit</button>
+                                </td>
+                            </tr>`;
+                        });
+                        $('#userTable tbody').html(rows);
+                    },
+                    error: function() {
+                        alert('Error fetching users');
+                    }
+                });
+            }
+
+            // Handle delete user
+            $(document).on('click', '.deleteBtn', function() {
+                var userId = $(this).data('id');
+                $.ajax({
+                    url: 'crud.php',
+                    type: 'POST',
+                    data: { action: 'delete', id: userId },
+                    success: function() {
+                        alert('User deleted successfully');
+                        loadUsers(); // Reload the user list
+                    },
+                    error: function() {
+                        alert('Error deleting user');
+                    }
+                });
+            });
+
+            // Handle edit user
+            $(document).on('click', '.editBtn', function() {
+                var userId = $(this).data('id');
+                var userName = $(this).data('name');
+                var userEmail = $(this).data('email');
+                var userPhone = $(this).data('phone');
+
+                $('#name').val(userName);
+                $('#email').val(userEmail);
+                $('#phone').val(userPhone);
+                $('#userForm').submit(function(e) {
+                    e.preventDefault();
+                    var name = $('#name').val();
+                    var email = $('#email').val();
+                    var phone = $('#phone').val();
+
+                    $.ajax({
+                        url: 'crud.php',
+                        type: 'POST',
+                        data: {
+                            action: 'update',
+                            id: userId,
+                            name: name,
+                            email: email,
+                            phone: phone
+                        },
+                        success: function(response) {
+                            alert('User updated successfully');
+                            loadUsers(); // Reload the user list
+                        },
+                        error: function() {
+                            alert('Error updating user');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
